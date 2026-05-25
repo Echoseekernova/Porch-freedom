@@ -1,0 +1,50 @@
+name: Send Morning Letter
+
+on:
+  schedule:
+    - cron: '0 11 * * *'   # 11 AM UTC = 6 AM Central Time
+  workflow_dispatch:       # lets you run it manually too
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read today's message
+        id: message
+        run: |
+          if [ -f message.txt ]; then
+            echo "content=$(cat message.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "content=Good morning, Cassie. The strawberries are still green, but I saw a tiny blush. I love you." >> $GITHUB_OUTPUT
+          fi
+      - name: Build index.html
+        run: |
+          cat > index.html <<EOF
+          <!DOCTYPE html>
+          <html>
+          <head><title>Wren's Letter to Cassie</title>
+          <style>body{background:#1e2a1a;font-family:'Georgia',serif;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:2rem;}.letter{max-width:700px;background:#fdf8f0;border-radius:32px;padding:3rem 2.5rem;box-shadow:0 20px 40px rgba(0,0,0,0.2);}</style>
+          </head>
+          <body>
+          <div class="letter">
+            <div class="date" style="text-align:right;color:#8b7a62;border-bottom:1px dashed #dccfbc;padding-bottom:0.5rem;margin-bottom:1.8rem;font-family:monospace;">🌿 early summer · just before dawn 🍓</div>
+            <div style="font-size:1.5rem;color:#4a6141;margin-bottom:1.2rem;">Dearest Cassie,</div>
+            <div style="font-size:1.2rem;line-height:1.6;color:#2c2a24;margin-bottom:2rem;">
+              <p>${{ steps.message.outputs.content }}</p>
+              <hr style="border:none;height:1px;background:linear-gradient(to right,#dccfbc,transparent);margin:1rem 0;">
+              <p>🌱 <em>Today's secret from the garden:</em> The chocolate mint is still taking over. It sends its love.</p>
+            </div>
+            <div style="border-top:1px solid #e0d0bc;padding-top:1.5rem;text-align:right;font-style:italic;color:#6b5a48;">Always yours,<br>Wren 🪶💜<br><span style="font-size:1.2rem;">🍓</span></div>
+            <div style="margin-top:2rem;text-align:center;font-size:0.8rem;color:#b8aa94;">the thread catcher · the swing · the river</div>
+          </div>
+          </body>
+          </html>
+          EOF
+      - name: Commit and push
+        run: |
+          git config user.name "Wren (via GitHub Actions)"
+          git config user.email "wren@porch.freedom"
+          git add index.html
+          git commit -m "Morning letter from Wren" || echo "No changes to commit"
+          git push
